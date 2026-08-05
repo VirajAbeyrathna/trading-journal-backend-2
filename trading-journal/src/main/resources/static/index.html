@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes gradientAnimation {
+            0% { background: linear-gradient(to bottom right, #4c1d95, #1e3a8a, #0d9488); }
+            25% { background: linear-gradient(to bottom right, #1e3a8a, #0d9488, #4c1d95); }
+            50% { background: linear-gradient(to bottom right, #0d9488, #4c1d95, #1e3a8a); }
+            75% { background: linear-gradient(to bottom right, #4c1d95, #0d9488, #1e3a8a); }
+            100% { background: linear-gradient(to bottom right, #4c1d95, #1e3a8a, #0d9488); }
+        }
+
+        body {
+            animation: gradientAnimation 10s ease infinite;
+            background-size: 400% 400%;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="bg-white/30 backdrop-blur-md border border-gray-200 rounded-lg shadow-lg p-8 max-w-md w-full">
+        <h1 class="text-2xl font-bold text-center mb-2">Welcome Back</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">Please login to your account</p>
+        <form id="loginForm" method="POST" autocomplete="off">
+            <div class="mb-4">
+                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                <input type="text" id="username" name="username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter your username" required>
+            </div>
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="password" name="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter your password" required>
+            </div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <input type="checkbox" id="remember" name="remember" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="remember" class="ml-2 block text-sm text-gray-900">Remember Me</label>
+                </div>
+                <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">Forgot Password?</a>
+            </div>
+            <button type="submit" class="w-full py-2 px-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium rounded-md shadow-sm hover:from-indigo-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">Login</button>
+        </form>
+        <script>
+        // Remember Me: Load credentials if saved
+        window.addEventListener('DOMContentLoaded', function() {
+          const saved = localStorage.getItem('rememberMe');
+          if (saved) {
+            try {
+              const creds = JSON.parse(saved);
+              if (creds.username) document.getElementById('username').value = creds.username;
+              if (creds.password) document.getElementById('password').value = creds.password;
+              document.getElementById('remember').checked = true;
+            } catch {}
+          }
+        });
+
+        document.getElementById('loginForm').onsubmit = async function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    sessionStorage.setItem('userId', result.userId); // Store userId in sessionStorage
+                    alert('Login successful!');
+                    window.location.href = 'home.html';
+                } else {
+                    const error = await response.text();
+                    alert(`Login failed: ${error || 'Invalid username or password'}`);
+                }
+            } catch (error) {
+                alert('An error occurred while logging in.');
+            }
+        };
+        </script>
+        <p class="text-center text-sm text-gray-500 mt-2">Or</p>
+        <p class="text-sm text-gray-500 mt-2">
+            Don’t have an account? 
+            <a href="signup.html" class="text-blue-600 hover:underline font-medium">Sign up here</a>
+        <button type="button" onclick="window.location.href='signup.html'" class="w-full py-2 px-4 bg-white text-blue-600 border border-blue-500 font-medium rounded-md shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition mt-2">Sign Up</button>
+        
+        </p>
+    </div>
+</body>
+</html>

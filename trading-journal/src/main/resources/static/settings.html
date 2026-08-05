@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" />
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        th { background: #e0f2fe; color: #1d4ed8; }
+        tr:hover { background: #fee2e2; }
+        td { border-bottom: 1px solid #e0e7ff; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Glassmorphism Sidebar -->
+    <div class="group/sidebar fixed left-0 top-0 h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 shadow-xl rounded-r-xl transition-all duration-300 ease-in-out w-[60px] hover:w-[220px] py-6 flex flex-col z-40">
+        <div class="p-4 flex items-center justify-start">
+            <button class="cursor-pointer" aria-label="Menu" title="Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-sky-600 hover:text-sky-700 transition-colors duration-300">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+        <nav class="flex flex-col items-center justify-center flex-1 space-y-8 mt-4">
+            <a href="home.html" class="flex items-center gap-3 w-full px-4 py-2 hover:bg-blue-50 hover:rounded-md hover:scale-105 transition-all duration-300 ease-in-out">
+                <span class="w-6 h-6 flex items-center justify-center text-sky-600 hover:text-sky-700 transition-colors duration-300" aria-label="Home" title="Home">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M4.5 10.5V19a1.5 1.5 0 001.5 1.5h3A1.5 1.5 0 0010.5 19v-4.5h3V19a1.5 1.5 0 001.5 1.5h3A1.5 1.5 0 0019.5 19V10.5" />
+                    </svg>
+                </span>
+                <span class="hidden opacity-0 scale-95 group-hover/sidebar:inline-flex group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 text-gray-700 hover:text-blue-700 font-medium text-sm transition-all duration-300">Home</span>
+            </a>
+            <a href="analysis.html" class="flex items-center gap-3 w-full px-4 py-2 hover:bg-blue-50 hover:rounded-md hover:scale-105 transition-all duration-300 ease-in-out">
+                <span class="w-6 h-6 flex items-center justify-center text-sky-600 hover:text-sky-700 transition-colors duration-300" aria-label="Analysis" title="Analysis">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a9 9 0 0112.728 0m-12.728 0a9 9 0 000 12.728m12.728-12.728a9 9 0 010 12.728m-12.728 0a9 9 0 0012.728 0" />
+                    </svg>
+                </span>
+                <span class="hidden opacity-0 scale-95 group-hover/sidebar:inline-flex group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 text-gray-700 hover:text-blue-700 font-medium text-sm transition-all duration-300">Analysis</span>
+            </a>
+            <a href="settings.html" class="flex items-center gap-3 w-full px-4 py-2 hover:bg-blue-50 hover:rounded-md hover:scale-105 transition-all duration-300 ease-in-out">
+                <span class="w-6 h-6 flex items-center justify-center text-sky-600 hover:text-sky-700 transition-colors duration-300" aria-label="Settings" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a9 9 0 0112.728 0m-12.728 0a9 9 0 000 12.728m12.728-12.728a9 9 0 010 12.728m-12.728 0a9 9 0 0012.728 0" />
+                    </svg>
+                </span>
+                <span class="hidden opacity-0 scale-95 group-hover/sidebar:inline-flex group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 text-gray-700 hover:text-blue-700 font-medium text-sm transition-all duration-300">Settings</span>
+            </a>
+        </nav>
+    </div>
+    <!-- Top Menu Bar -->
+    <div class="fixed top-0 left-0 w-full h-[70px] flex items-center justify-between px-6 z-40 sidebar-menu-bar bg-white/30 backdrop-blur-md shadow-md border-b border-white/20 transition-all duration-300 font-sans mb-1">
+        <div class="flex items-center">
+            <svg class="mr-3 w-6 h-6 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="white" />
+                <path d="M8 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="text-2xl font-bold tracking-wide text-gray-900">Settings</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button class="w-8 h-8 flex items-center justify-center rounded-full border border-white/30 bg-white/10 shadow hover:bg-white/20 transition-all duration-200 hover:scale-105" title="Toggle Theme">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
+                </svg>
+            </button>
+            <span class="text-sm text-gray-800 font-medium" id="user-name">User</span>
+            <div class="relative group">
+                <img id="profileImage" src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" class="w-8 h-8 rounded-full object-cover border border-white shadow cursor-pointer transition-transform duration-200 hover:scale-105" />
+            </div>
+        </div>
+    </div>
+    <div class="max-w-6xl mx-auto py-8 px-4">
+        <h1 class="text-3xl font-bold mb-6 text-sky-700">Profile Settings</h1>
+        <div class="bg-white rounded-xl shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Change Profile Image</h2>
+            <input type="text" id="imageUrlInput" class="w-full border border-gray-300 rounded-lg p-2 mb-4" placeholder="Enter image URL" />
+            <button id="updateImageButton" class="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition">Update Image</button>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">Admin Dashboard</h2>
+            <iframe src="dashboard.php" class="w-full h-[600px] border border-gray-300 rounded-lg"></iframe>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">Import/Export Data</h2>
+            <div class="flex flex-wrap gap-4">
+                <button id="exportDataButton" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">Export Data</button>
+                <input type="file" id="importDataInput" class="hidden" accept=".json" />
+                <label for="importDataInput" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition cursor-pointer">Import Data</label>
+                <!-- <button id="sendToTelegramButton" class="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.05 1.577c-.393-.016-.784.08-1.117.235-.484.186-4.92 1.902-9.41 3.64-2.26.873-4.518 1.746-6.256 2.415-1.737.67-3.045 1.168-3.114 1.192-.46.16-1.082.362-1.61.984-.133.155-.267.354-.335.628s-.038.622.095.895c.265.547.714.773 1.244.976 1.76.564 3.58 1.102 5.087 1.608.556 1.96 1.09 3.927 1.618 5.89.174.394.553.54.944.544l.035.001c.16-.003.305-.041.465-.123.295-.151.686-.454 1.244-.874.142-.106.331-.242.582-.42.83-.615 1.646-1.237 2.448-1.855.806.858 1.627 1.71 2.448 2.565.193.18.364.421.409.65.042.21.01.466-.273.68-.152.115-.525.218-.956.218H1.431c-.433 0-.822.188-1.094.512-.172.202-.304.485-.3.826.012 1.228.41 1.605.854 1.992.478.42 1.116.648 1.802.648h19.823c.62-.006 1.25-.17 1.739-.522.489-.351.903-.878 1.103-1.561.084-.288.138-.583.162-.889.028-.346.023-.7-.065-1.038-.32-1.23-1.322-2.247-2.051-2.932-.027-.025-.057-.052-.097-.09l-.012-.011c-.976-.907-1.956-1.811-2.936-2.716.214-.173.428-.345.641-.519.256-.207.595-.47.934-.725.692-.52 1.387-1.03 1.883-1.402.267-.203.519-.407.73-.613.398-.384.656-.803.739-1.25.055-.296.066-.611-.036-.923a1.448 1.448 0 00-.528-.726 1.447 1.447 0 00-.832-.275h-.026z"/>
+                    </svg>
+                    Send Last Export to Telegram
+                </button> -->
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedImageUrl = localStorage.getItem('profileImageUrl');
+            const profileImage = document.getElementById('profileImage');
+            if (savedImageUrl) {
+                profileImage.src = savedImageUrl;
+            }
+        });
+
+        document.getElementById('updateImageButton').addEventListener('click', async () => {
+            const imageUrl = document.getElementById('imageUrlInput').value;
+            const profileImage = document.getElementById('profileImage');
+            if (imageUrl) {
+                profileImage.src = imageUrl;
+                localStorage.setItem('profileImageUrl', imageUrl);
+
+                // Save the image URL to the database
+                try {
+                    const response = await fetch('save-profile-image.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ imageUrl })
+                    });
+                    const result = await response.text();
+                    if (result === 'Success') {
+                        alert('Profile image updated successfully!');
+                    } else {
+                        alert('Failed to update profile image in the database.');
+                    }
+                } catch (error) {
+                    console.error('Error saving profile image:', error);
+                    alert('An error occurred while saving the profile image.');
+                }
+            }
+        });
+
+        document.getElementById('exportDataButton').addEventListener('click', async () => {
+            const exportButton = document.getElementById('exportDataButton');
+            const originalText = exportButton.textContent;
+
+            // Show loading state
+            exportButton.textContent = 'Exporting...';
+            exportButton.classList.add('opacity-70');
+            exportButton.disabled = true;
+
+            try {
+                const response = await fetch('export-data.php');
+
+                // Check if response is valid JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server did not return JSON');
+                }
+
+                const data = await response.json();
+
+                // Handle both old and new data formats
+                let tradeData = [];
+                let dropdownData = {};
+                let validItems = 0;
+                let uniqueRRCount = 0;
+                let uniqueStrategyCount = 0;
+                let uniqueInstrumentCount = 0;
+
+                if (Array.isArray(data)) {
+                    // Old format - just an array of trades
+                    tradeData = data;
+                    if (tradeData.length === 0) {
+                        alert('No trade data found to export.');
+                        return;
+                    }
+
+                    // Count items with RR, strategy, and instrument
+                    validItems = tradeData.filter(item =>
+                        item.rr && item.strategy && item.instrument
+                    ).length;
+                } else if (data && data.trades) {
+                    // New format with trades and dropdowns
+                    tradeData = data.trades;
+                    if (tradeData.length === 0) {
+                        alert('No trade data found to export.');
+                        return;
+                    }
+
+                    // Count items with RR, strategy, and instrument
+                    validItems = tradeData.filter(item =>
+                        item.rr && item.strategy && item.instrument
+                    ).length;
+
+                    // Get dropdown data
+                    if (data.dropdowns) {
+                        dropdownData = data.dropdowns;
+                        uniqueRRCount = dropdownData.rr ? dropdownData.rr.length : 0;
+                        uniqueStrategyCount = dropdownData.strategies ? dropdownData.strategies.length : 0;
+                        uniqueInstrumentCount = dropdownData.instruments ? dropdownData.instruments.length : 0;
+                    }
+                } else {
+                    alert('Invalid data format received from server.');
+                    return;
+                }
+
+                // Store the data for export
+                const exportData = {
+                    trades: tradeData,
+                    dropdowns: dropdownData
+                };
+
+                // Log the data before creating the blob
+                console.log('Export data before creating blob:', exportData);
+
+                // Check RR values before export
+                if (exportData.trades && exportData.trades.length > 0) {
+                    console.log('Sample RR values before export:');
+                    for (let i = 0; i < Math.min(5, exportData.trades.length); i++) {
+                        console.log(`Trade #${i+1} RR:`, exportData.trades[i].rr);
+                    }
+                }
+
+                const exportJson = JSON.stringify(exportData, null, 2);
+                console.log('Stringified JSON (first 500 chars):', exportJson.substring(0, 500) + '...');
+
+                const blob = new Blob([exportJson], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'trading_data.json';
+                a.click();
+
+                URL.revokeObjectURL(url);
+
+                // Store the export data in localStorage for later use with the Telegram button
+                localStorage.setItem('lastExportData', exportJson);
+                localStorage.setItem('lastExportStats', JSON.stringify({
+                    totalRecords: tradeData.length,
+                    completeRecords: validItems,
+                    uniqueRRCount,
+                    uniqueStrategyCount,
+                    uniqueInstrumentCount,
+                    exportDate: new Date().toISOString()
+                }));
+
+                // Prepare success message with dropdown details
+                let successMessage = `Data exported successfully!\nExported ${tradeData.length} trade records.\n${validItems} records have complete RR, strategy, and instrument data.`;
+
+                if (uniqueRRCount > 0 || uniqueStrategyCount > 0 || uniqueInstrumentCount > 0) {
+                    successMessage += `\n\nExported dropdown menu options:\n`;
+                    if (uniqueRRCount > 0) {
+                        successMessage += `- ${uniqueRRCount} RR options\n`;
+                    }
+                    if (uniqueStrategyCount > 0) {
+                        successMessage += `- ${uniqueStrategyCount} strategy options\n`;
+                    }
+                    if (uniqueInstrumentCount > 0) {
+                        successMessage += `- ${uniqueInstrumentCount} instrument options\n`;
+                    }
+                }
+
+                alert(successMessage);
+
+                // Send file to Telegram
+                const telegramResponse = await fetch('telegram_bot_send_message.php', {
+                    method: 'POST',
+                    body: JSON.stringify({ file_content: exportJson, file_name: 'trading_data.json' }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const telegramResult = await telegramResponse.json();
+                console.log('Telegram Response:', telegramResult);
+
+                if (telegramResult.success) {
+                    alert('Data exported and sent to Telegram successfully!');
+                } else {
+                    alert('Data exported, but failed to send to Telegram: ' + (telegramResult.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                alert('Failed to export data: ' + error.message);
+            } finally {
+                // Reset button state
+                exportButton.textContent = originalText;
+                exportButton.classList.remove('opacity-70');
+                exportButton.disabled = false;
+            }
+        });
+
+        document.getElementById('importDataInput').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Show loading indicator
+            const importLabel = document.querySelector('label[for="importDataInput"]');
+            const originalText = importLabel.textContent;
+            importLabel.textContent = 'Importing...';
+            importLabel.classList.add('opacity-70');
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const fileData = e.target.result;
+                    console.log('Raw file content:', fileData.substring(0, 500) + '...');
+
+                    const data = JSON.parse(fileData);
+                    console.log('Parsed import data:', data);
+
+                    // Check if the data is in the expected format
+                    if (data.trades && Array.isArray(data.trades)) {
+                        console.log('Found trades array in the imported data');
+
+                        // Ensure consistent RR format by removing ":1" if present, or adding it if missing
+                        // The backend expects RR values as simple numbers without ":1"
+                        data.trades.forEach(trade => {
+                            if (trade.rr) {
+                                // Remove ":1" suffix if present
+                                if (typeof trade.rr === 'string' && trade.rr.includes(':')) {
+                                    const parts = trade.rr.split(':');
+                                    trade.rr = parts[0];
+                                    console.log(`Normalized RR value: ${trade.rr}`);
+                                }
+                            }
+                        });
+                    }
+
+                    const response = await fetch('import-data.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    // Check if the response is properly formatted JSON
+                    let result;
+                    try {
+                        result = await response.json();
+                    } catch (jsonError) {
+                        console.error('Failed to parse server response as JSON:', jsonError);
+                        const textResult = await response.text();
+                        alert('Failed to parse server response. Server returned: ' + textResult.substring(0, 100) + (textResult.length > 100 ? '...' : ''));
+                        return;
+                    }
+
+                    if (result.status === 'success') {
+                        // Verify the data in the result
+                        let rrCount = 0;
+                        let strategyCount = 0;
+                        let instrumentCount = 0;
+                        let uniqueRrOptions = 0;
+                        let uniqueStrategyOptions = 0;
+                        let uniqueInstrumentOptions = 0;
+
+                        // If we have detailed stats in the response, use them
+                        if (result.stats) {
+                            rrCount = result.stats.rrCount || 0;
+                            strategyCount = result.stats.strategyCount || 0;
+                            instrumentCount = result.stats.instrumentCount || 0;
+                            uniqueRrOptions = result.stats.uniqueRrOptions || 0;
+                            uniqueStrategyOptions = result.stats.uniqueStrategyOptions || 0;
+                            uniqueInstrumentOptions = result.stats.uniqueInstrumentOptions || 0;
+
+                            // Update dropdown values in the database
+                            if (result.dropdowns) {
+                                // Store dropdown values in localStorage temporarily
+                                localStorage.setItem('rrOptions', JSON.stringify(result.dropdowns.rr || []));
+                                localStorage.setItem('strategyOptions', JSON.stringify(result.dropdowns.strategies || []));
+                                localStorage.setItem('instrumentOptions', JSON.stringify(result.dropdowns.instruments || []));
+
+                                console.log('Dropdown options saved to localStorage');
+
+                                // Update user dropdown values in database
+                                try {
+                                    const dropdownResponse = await fetch('update-user-dropdowns.php', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ dropdowns: result.dropdowns }),
+                                    });
+
+                                    const dropdownResult = await dropdownResponse.json();
+                                    console.log('Dropdown update result:', dropdownResult);
+
+                                    if (!dropdownResult.success) {
+                                        console.error('Failed to update dropdown values:', dropdownResult.error);
+                                    }
+                                } catch (dropdownError) {
+                                    console.error('Error updating dropdown values:', dropdownError);
+                                }
+                            }
+
+                            alert(`Data imported successfully!\nImported ${result.count} trade records.\n` +
+                                `${rrCount} records with RR data\n` +
+                                `${strategyCount} records with strategy data\n` +
+                                `${instrumentCount} records with instrument data\n\n` +
+                                `Imported dropdown options:\n` +
+                                `${uniqueRrOptions} RR options\n` +
+                                `${uniqueStrategyOptions} strategy options\n` +
+                                `${uniqueInstrumentOptions} instrument options\n\n` +
+                                `${result.details}`);
+                        } else {
+                            // Simpler success message without detailed stats
+                            alert(`Data imported successfully!\nImported ${result.count} trade records.\n${result.details}`);
+                        }
+                    } else {
+                        alert(`Failed to import data: ${result.error || 'Unknown error'}\n${result.details || ''}`);
+                    }
+                } catch (error) {
+                    console.error('Error importing data:', error);
+                    alert('Invalid file format or an error occurred.');
+                } finally {
+                    // Reset the input and label
+                    event.target.value = '';
+                    importLabel.textContent = originalText;
+                    importLabel.classList.remove('opacity-70');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Add event listener for "Send to Telegram" button
+        document.getElementById('sendToTelegramButton').addEventListener('click', async () => {
+            const telegramButton = document.getElementById('sendToTelegramButton');
+            const originalText = telegramButton.innerHTML;
+
+            // Show loading state
+            telegramButton.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Sending...';
+            telegramButton.classList.add('opacity-70');
+            telegramButton.disabled = true;
+
+            try {
+                // Try to get the last exported data from localStorage first
+                const lastExportData = localStorage.getItem('lastExportData');
+                
+                if (lastExportData) {
+                    // Send the saved data directly via telegram_bot_send_message.php
+                    console.log('Sending last exported data from localStorage');
+                    
+                    const telegramResponse = await fetch('telegram_bot_send_message.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            file_content: lastExportData,
+                            file_name: 'trading_data.json'
+                        })
+                    });
+                    
+                    const result = await telegramResponse.json();
+                    
+                    if (result.success) {
+                        alert('Last exported data sent to Telegram successfully!');
+                    } else {
+                        console.log('Failed with first method, trying export_and_send.php');
+                        throw new Error('First method failed');
+                    }
+                } else {
+                    // If no data in localStorage, use the export_and_send.php script
+                    throw new Error('No data in localStorage');
+                }
+            } catch (error) {
+                console.log('Using export_and_send.php as fallback');
+                try {
+                    // Use export_and_send.php as fallback
+                    const response = await fetch('export_and_send.php');
+                    const result = await response.json();
+
+                    if (result.success) {
+                        alert('Data exported and sent to Telegram successfully!');
+                    } else {
+                        alert('Failed to send data to Telegram: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (secondError) {
+                    console.error('Error sending data to Telegram:', secondError);
+                    alert('An error occurred while sending data to Telegram.');
+                }
+            } finally {
+                // Reset button state
+                telegramButton.innerHTML = originalText;
+                telegramButton.classList.remove('opacity-70');
+                telegramButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

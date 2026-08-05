@@ -194,7 +194,10 @@
         <div id="trade-viewer" class="w-full max-w-screen-xl mx-auto mb-10 p-6 rounded-xl shadow-lg backdrop-blur-md bg-gradient-to-r from-blue-300 via-purple-200 to-red-200 bg-opacity-40 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-400 hover:via-purple-300 hover:to-red-300 hover:bg-opacity-60">
             <div class="flex flex-col gap-4">
                 <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
-                    <h2 class="text-2xl font-bold text-slate-800">Your Trades</h2>
+                    <div class="flex items-baseline gap-4">
+                        <h2 class="text-2xl font-bold text-slate-800">Your Trades</h2>
+                        <a href="#" class="text-sm text-blue-700 hover:text-blue-900 font-semibold hover:underline transition-colors">See all trades</a>
+                    </div>
                     <div class="flex gap-4 items-center">
                         <select id="filter-period" class="h-10 px-3 border border-gray-300 rounded text-slate-800 bg-white">
                             <option value="week">This Week</option>

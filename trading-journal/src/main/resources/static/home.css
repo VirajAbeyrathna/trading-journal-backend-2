@@ -1,0 +1,28 @@
+body { font-family: 'Inter', sans-serif; }
+
+/* Pure CSS solution for dynamic connection */
+.group\/sidebar:hover ~ .sidebar-menu-bar {
+    margin-left: 220px !important;
+    width: calc(100% - 220px) !important;
+}
+.group\/sidebar:hover ~ .main-content {
+    margin-left: 220px !important;
+}
+.sidebar-menu-bar {
+    margin-left: 60px;
+    width: calc(100% - 60px);
+}
+.main-content {
+    margin-left: 60px;
+}
+/* Weekday Bar Styles (for custom tweaks if needed) */
+.weekday-today {
+    background: linear-gradient(to right, #38bdf8, #2563eb);
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 4px 16px 0 rgba(56,189,248,0.15);
+}
+.weekday-normal {
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.8);
+}

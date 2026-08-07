@@ -240,12 +240,24 @@
 <main class="main">
     <div style="max-width:1280px;margin:0 auto;">
 
-        <!-- Page heading -->
-        <div style="margin-bottom:28px;">
-            <h1 style="font-size:28px;font-weight:700;background:linear-gradient(90deg,#2563eb,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 0 4px;">
-                Trading Analysis
-            </h1>
-            <p style="color:#64748b;font-size:14px;margin:0;">RR performance across daily, weekly &amp; monthly timeframes</p>
+        <!-- Page heading & Filters -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; flex-wrap:wrap; gap:16px;">
+            <div>
+                <h1 style="font-size:28px;font-weight:700;background:linear-gradient(90deg,#2563eb,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 0 4px;">
+                    Trading Analysis
+                </h1>
+                <p style="color:#64748b;font-size:14px;margin:0;">RR performance across daily, weekly &amp; monthly timeframes</p>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <select id="filter-strategy" onchange="loadAnalysisData()" style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; outline:none; background:#fff; color:#334155; cursor:pointer;" title="Filter by Strategy">
+                    <option value="all">All Strategies</option>
+                </select>
+                <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:4px 8px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <input type="date" id="filter-start-date" onchange="loadAnalysisData()" style="border:none; font-size:14px; outline:none; background:transparent; color:#334155; cursor:pointer;" title="Start Date" />
+                    <span style="color:#64748b;font-size:12px;font-weight:600;">TO</span>
+                    <input type="date" id="filter-end-date" onchange="loadAnalysisData()" style="border:none; font-size:14px; outline:none; background:transparent; color:#334155; cursor:pointer;" title="End Date" />
+                </div>
+            </div>
         </div>
 
         <!-- ── Charts Row ─────────────────────────── -->
@@ -527,8 +539,29 @@ function makeChart(ctx, label, color, labels, data) {
 // ─── Stored data for target feature ──────────────────────────────────────────
 let _weeklyDayMap = {}; // weekKey -> { day -> [rrVals] }
 
+// ─── Load strategies for filter ───────────────────────────────────────────────
+let strategiesLoaded = false;
+function loadStrategies() {
+    if (strategiesLoaded) return;
+    const userId = sessionStorage.getItem('userId');
+    if (!userId) return;
+    fetch(`${API_BASE}/api/user-options?userId=${userId}`)
+        .then(res => res.json())
+        .then(data => {
+            const strategies = Array.isArray(data) ? data.filter(o => o.type === 'strategy') : (data.strategy || []);
+            const filterStratSel = document.getElementById('filter-strategy');
+            if(filterStratSel) {
+                const currentVal = filterStratSel.value;
+                filterStratSel.innerHTML = '<option value="all">All Strategies</option>' + strategies.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
+                filterStratSel.value = currentVal || 'all';
+            }
+            strategiesLoaded = true;
+        }).catch(err => console.warn('Failed to load strategies:', err));
+}
+
 // ─── Load all analysis data ───────────────────────────────────────────────────
 function loadAnalysisData() {
+    loadStrategies();
     const userId = sessionStorage.getItem('userId');
     if (!userId) { window.location.href = 'login-form.html'; return; }
 
@@ -536,7 +569,23 @@ function loadAnalysisData() {
         .then(r => r.json())
         .then(trades => {
             if (!Array.isArray(trades)) return;
-            processData(trades);
+            
+            const strategyFilter = document.getElementById('filter-strategy').value;
+            const startDate = document.getElementById('filter-start-date').value;
+            const endDate = document.getElementById('filter-end-date').value;
+            
+            let filteredTrades = trades;
+            if (strategyFilter && strategyFilter !== 'all') {
+                filteredTrades = filteredTrades.filter(t => t.strategy === strategyFilter);
+            }
+            if (startDate) {
+                filteredTrades = filteredTrades.filter(t => t.date >= startDate);
+            }
+            if (endDate) {
+                filteredTrades = filteredTrades.filter(t => t.date <= endDate);
+            }
+            
+            processData(filteredTrades);
         })
         .catch(err => console.warn('Failed to load trades:', err));
 }

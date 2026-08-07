@@ -195,6 +195,9 @@
                         <a href="#" class="text-sm text-blue-700 hover:text-blue-900 font-semibold hover:underline transition-colors">See all trades</a>
                     </div>
                     <div class="flex gap-4 items-center">
+                        <select id="filter-strategy" class="h-10 px-3 border border-gray-300 rounded text-slate-800 bg-white shadow-sm hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-colors">
+                            <option value="all">All Strategies</option>
+                        </select>
                         <select id="filter-period" class="h-10 px-3 border border-gray-300 rounded text-slate-800 bg-white">
                             <option value="week">This Week</option>
                             <option value="month">This Month</option>
@@ -242,7 +245,7 @@
 <!-- API_BASE is already defined at the top of the file -->
 
 
-<script src="home.js?v=2"></script>
+<script src="home.js?v=3"></script>
 
 </body>
 </html>

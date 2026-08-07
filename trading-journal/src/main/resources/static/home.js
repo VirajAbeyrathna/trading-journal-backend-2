@@ -240,37 +240,111 @@ document.addEventListener('DOMContentLoaded', function() {
         const tradeList = document.getElementById('trade-list');
         if (!tradeList) return;
         
-        let sortedTrades = [...window.currentTrades];
+        let processedTrades = [...window.currentTrades];
+        if (processedTrades.length > 0) {
+            let tempTrades = [...processedTrades].filter(t => t && t.date).sort((a, b) => {
+                let pa = a.date.split('-');
+                let pb = b.date.split('-');
+                if(pa.length < 3 || pb.length < 3) return 0;
+                return new Date(pa[0], pa[1]-1, pa[2]) - new Date(pb[0], pb[1]-1, pb[2]);
+            });
+            let filledTrades = [];
+            
+            for (let i = 0; i < tempTrades.length; i++) {
+                if (i > 0) {
+                    let prevParts = tempTrades[i-1].date.split('-');
+                    let currParts = tempTrades[i].date.split('-');
+                    
+                    if (prevParts.length >= 3 && currParts.length >= 3) {
+                        let prevDate = new Date(prevParts[0], prevParts[1] - 1, prevParts[2]);
+                        let currDate = new Date(currParts[0], currParts[1] - 1, currParts[2]);
+                        
+                        let nextDate = new Date(prevDate);
+                        nextDate.setDate(nextDate.getDate() + 1);
+                        
+                        while (nextDate < currDate) {
+                            let dayOfWeek = nextDate.getDay();
+                            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                                filledTrades.push({
+                                    isDummy: true,
+                                    instrument: '-',
+                                    strategy: '-',
+                                    rr: '0',
+                                    result: '-',
+                                    date: formatDate(nextDate)
+                                });
+                            }
+                            nextDate.setDate(nextDate.getDate() + 1);
+                        }
+                    }
+                }
+                filledTrades.push(tempTrades[i]);
+            }
+            
+            // Re-append any trades that had no valid date
+            let invalidTrades = processedTrades.filter(t => !t || !t.date);
+            processedTrades = filledTrades.concat(invalidTrades);
+        }
+
+        let sortedTrades = processedTrades;
         if (window.currentSort === 'newest') {
-            sortedTrades.sort((a, b) => new Date(b.date) - new Date(a.date));
+            sortedTrades.sort((a, b) => {
+                if (!a.date || !b.date) return 0;
+                let pa = a.date.split('-');
+                let pb = b.date.split('-');
+                if(pa.length < 3 || pb.length < 3) return 0;
+                return new Date(pb[0], pb[1]-1, pb[2]) - new Date(pa[0], pa[1]-1, pa[2]);
+            });
         } else if (window.currentSort === 'oldest') {
-            sortedTrades.sort((a, b) => new Date(a.date) - new Date(b.date));
+            sortedTrades.sort((a, b) => {
+                if (!a.date || !b.date) return 0;
+                let pa = a.date.split('-');
+                let pb = b.date.split('-');
+                if(pa.length < 3 || pb.length < 3) return 0;
+                return new Date(pa[0], pa[1]-1, pa[2]) - new Date(pb[0], pb[1]-1, pb[2]);
+            });
         } else if (window.currentSort === 'rr') {
-            sortedTrades.sort((a, b) => parseFloat(b.rr) - parseFloat(a.rr));
+            sortedTrades.sort((a, b) => parseFloat(b.rr || 0) - parseFloat(a.rr || 0));
         } else if (window.currentSort === 'result') {
             sortedTrades.sort((a, b) => {
-                if (a.result === b.result) return new Date(b.date) - new Date(a.date);
+                if (a.result === b.result) {
+                    if (!a.date || !b.date) return 0;
+                    let pa = a.date.split('-');
+                    let pb = b.date.split('-');
+                    if(pa.length < 3 || pb.length < 3) return 0;
+                    return new Date(pb[0], pb[1]-1, pb[2]) - new Date(pa[0], pa[1]-1, pa[2]);
+                }
                 return a.result === 'Profit' ? -1 : 1;
             });
         }
 
         tradeList.innerHTML = sortedTrades.length ? sortedTrades.map(t => {
             const isProfit = t.result === 'Profit';
-            const rowClass = isProfit ? 'bg-green-50/20 hover:bg-green-50/60' : 'bg-red-50/20 hover:bg-red-50/60';
-            const highlightClass = isProfit ? 'text-green-600 font-bold' : 'text-red-600 font-bold';
+            const isLoss = t.result === 'Loss';
+            const isDummy = t.isDummy;
             
-            return `
-            <tr class="transition-colors group ${rowClass}">
-                <td class="px-6 py-4 whitespace-nowrap ${highlightClass}">${t.instrument}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-gray-700">${t.strategy}</td>
-                <td class="px-6 py-4 whitespace-nowrap ${highlightClass}">${t.rr}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${isProfit ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                        ${t.result}
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${t.date}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            let rowClass = 'bg-gray-50/20 hover:bg-gray-50/60';
+            let highlightClass = 'text-gray-600 font-bold';
+            
+            if (isProfit) {
+                rowClass = 'bg-green-50/20 hover:bg-green-50/60';
+                highlightClass = 'text-green-600 font-bold';
+            } else if (isLoss) {
+                rowClass = 'bg-red-50/20 hover:bg-red-50/60';
+                highlightClass = 'text-red-600 font-bold';
+            }
+            
+            let dateStr = t.date;
+            if (t.date && t.date.includes('-')) {
+                const parts = t.date.split('-');
+                if (parts.length >= 3) {
+                    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                    const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                    dateStr = `${t.date} (${weekdays[d.getDay()]})`;
+                }
+            }
+
+            let actionButtons = isDummy ? '' : `
                     <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button class="text-blue-500 hover:text-blue-700" onclick="editTrade(${t.id})" title="Edit">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
@@ -278,7 +352,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button class="text-red-500 hover:text-red-700" onclick="deleteTrade(${t.id})" title="Delete">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
                         </button>
-                    </div>
+                    </div>`;
+
+            let badge = isDummy ? '-' : `
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${isProfit ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                        ${t.result}
+                    </span>`;
+
+            return `
+            <tr class="transition-colors group ${rowClass}">
+                <td class="px-6 py-4 whitespace-nowrap ${highlightClass}">${t.instrument}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-gray-700">${t.strategy}</td>
+                <td class="px-6 py-4 whitespace-nowrap ${highlightClass}">${t.rr}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${badge}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${dateStr}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    ${actionButtons}
                 </td>
             </tr>
             `;

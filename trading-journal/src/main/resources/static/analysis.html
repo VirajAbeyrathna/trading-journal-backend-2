@@ -263,6 +263,16 @@
 
             <div class="card">
                 <div class="card-title">
+                    <svg style="width:16px;height:16px;color:#f59e0b;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4"/>
+                    </svg>
+                    Monday Cumulative RR <span class="badge">MONDAY</span>
+                </div>
+                <div class="chart-wrap"><canvas id="mondayRRChart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
                     <svg style="width:16px;height:16px;color:#7c3aed;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4"/>
                     </svg>
@@ -299,11 +309,12 @@
                             <tr>
                                 <th>Week</th>
                                 <th>Dates</th>
+                                <th>Monday Sum</th>
                                 <th>Week Sum</th>
                                 <th>Σ Cumul.</th>
                             </tr>
                         </thead>
-                        <tbody><tr><td colspan="3" style="text-align:center;padding:20px;color:#94a3b8;">Loading…</td></tr></tbody>
+                        <tbody><tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8;">Loading…</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -458,7 +469,7 @@ function weekDateRange(isoKey) {
 }
 
 // ─── Chart instances ──────────────────────────────────────────────────────────
-let dailyChart, weeklyChart, monthlyChart;
+let dailyChart, weeklyChart, monthlyChart, mondayChart;
 
 // Shared chart defaults
 Chart.defaults.font.family = "'Inter', sans-serif";
@@ -594,6 +605,25 @@ function processData(trades) {
         dailyChart = dc;
     }
 
+    // ── Monday Chart ────────────────────────────────
+    const mondayLabels = dLabels.filter(d => new Date(d).getUTCDay() === 1);
+    const mondayPeriod = mondayLabels.map(k => sum(dailyRR[k]));
+    const mondayData   = cumSum(mondayPeriod);
+    if (mondayChart) {
+        mondayChart.data.labels = mondayLabels;
+        mondayChart.data.datasets[0].data = mondayData;
+        mondayChart.data.datasets[0].periodData = mondayPeriod;
+        mondayChart.update('none');
+    } else {
+        const mc = makeChart(
+            document.getElementById('mondayRRChart').getContext('2d'),
+            'Cumulative RR', '#f59e0b', mondayLabels, mondayData
+        );
+        mc.data.datasets[0].periodData = mondayPeriod;
+        mc.update('none');
+        mondayChart = mc;
+    }
+
     // ── Weekly Chart & Table ───────────────────────
     const wLabels  = Object.keys(weeklyRR).sort();
     const wPeriod  = wLabels.map(k => sum(weeklyRR[k]));   // each week's own sum
@@ -617,15 +647,28 @@ function processData(trades) {
     wTbody.innerHTML = wLabels.map((wk, i) => {
         const periodSum = wPeriod[i];
         const cumTotal  = wData[i];
+        
+        let mondaySum = 0;
+        const daysInWeek = weekDayRR[wk] || {};
+        for (const day in daysInWeek) {
+            const d = new Date(day);
+            if (d.getUTCDay() === 1) { // 1 is Monday
+                mondaySum += sum(daysInWeek[day]);
+            }
+        }
+        
+        const mCls = mondaySum >= 0 ? 'rr-positive' : 'rr-negative';
         const pCls = periodSum >= 0 ? 'rr-positive' : 'rr-negative';
         const cCls = cumTotal  >= 0 ? 'rr-positive' : 'rr-negative';
+        
         return `<tr>
             <td style="font-weight:600;">${wk}</td>
             <td style="color:#94a3b8;font-size:12px;">${weekDateRange(wk)}</td>
+            <td class="${mCls}">${mondaySum >= 0 ? '+' : ''}${mondaySum.toFixed(2)} R</td>
             <td class="${pCls}">${periodSum >= 0 ? '+' : ''}${periodSum.toFixed(2)} R</td>
             <td class="${cCls}" style="font-size:11px;opacity:.75;">Σ ${cumTotal >= 0 ? '+' : ''}${cumTotal.toFixed(2)} R</td>
         </tr>`;
-    }).join('') || `<tr><td colspan="4" style="text-align:center;padding:20px;color:#94a3b8;">No data yet.</td></tr>`;
+    }).join('') || `<tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8;">No data yet.</td></tr>`;
 
     // ── Monthly Chart & Table ──────────────────────
     const mLabels  = Object.keys(monthlyRR).sort();

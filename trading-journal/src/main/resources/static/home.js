@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const stratSel = document.getElementById('strategy');
                 if(stratSel) stratSel.innerHTML = strategies.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
                 
+                const filterStratSel = document.getElementById('filter-strategy');
+                if(filterStratSel) filterStratSel.innerHTML = '<option value="all">All Strategies</option>' + strategies.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
+                
                 const rrSel = document.getElementById('rr');
                 if(rrSel) rrSel.innerHTML = rrs.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
             }).catch(console.error);
@@ -234,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.currentSort = 'newest';
+    window.currentStrategyFilter = 'all';
     window.currentTrades = [];
 
     function renderTrades() {
@@ -241,6 +245,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!tradeList) return;
         
         let processedTrades = [...window.currentTrades];
+        
+        if (window.currentStrategyFilter && window.currentStrategyFilter !== 'all') {
+            processedTrades = processedTrades.filter(t => t.strategy === window.currentStrategyFilter);
+        }
+
         if (processedTrades.length > 0) {
             let tempTrades = [...processedTrades].filter(t => t && t.date).sort((a, b) => {
                 let pa = a.date.split('-');
@@ -398,6 +407,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sort-oldest')?.addEventListener('click', () => { window.currentSort = 'oldest'; renderTrades(); });
     document.getElementById('sort-rr')?.addEventListener('click', () => { window.currentSort = 'rr'; renderTrades(); });
     document.getElementById('sort-result')?.addEventListener('click', () => { window.currentSort = 'result'; renderTrades(); });
+
+    document.getElementById('filter-strategy')?.addEventListener('change', (e) => {
+        window.currentStrategyFilter = e.target.value;
+        renderTrades();
+    });
 
     window.editingTradeId = null;
 

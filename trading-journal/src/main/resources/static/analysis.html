@@ -249,9 +249,14 @@
                 <p style="color:#64748b;font-size:14px;margin:0;">RR performance across daily, weekly &amp; monthly timeframes</p>
             </div>
             <div style="display:flex; gap:12px; align-items:center;">
-                <select id="filter-strategy" onchange="loadAnalysisData()" style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; outline:none; background:#fff; color:#334155; cursor:pointer;" title="Filter by Strategy">
-                    <option value="all">All Strategies</option>
-                </select>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <select id="filter-strategy" onchange="loadAnalysisData()" style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:14px; outline:none; background:#fff; color:#334155; cursor:pointer;" title="Filter by Strategy">
+                        <option value="all">All Strategies</option>
+                    </select>
+                    <button id="star-filter-strategy" onclick="saveDefaultAnalysisStrategy()" style="background:none;border:none;cursor:pointer;color:#fbbf24;padding:8px;" title="Set as default filter">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </button>
+                </div>
                 <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:4px 8px; border-radius:8px; border:1px solid #e2e8f0;">
                     <input type="date" id="filter-start-date" onchange="loadAnalysisData()" style="border:none; font-size:14px; outline:none; background:transparent; color:#334155; cursor:pointer;" title="Start Date" />
                     <span style="color:#64748b;font-size:12px;font-weight:600;">TO</span>
@@ -553,15 +558,34 @@ function loadStrategies() {
             if(filterStratSel) {
                 const currentVal = filterStratSel.value;
                 filterStratSel.innerHTML = '<option value="all">All Strategies</option>' + strategies.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
-                filterStratSel.value = currentVal || 'all';
+                const defFilterStrategy = localStorage.getItem(`default_filter-strategy_${userId}`);
+                if (currentVal === 'all' && defFilterStrategy) {
+                    filterStratSel.value = defFilterStrategy;
+                } else {
+                    filterStratSel.value = currentVal || 'all';
+                }
             }
             strategiesLoaded = true;
+            // Reload data with new default filter if it changed
+            loadAnalysisData();
         }).catch(err => console.warn('Failed to load strategies:', err));
+}
+
+function saveDefaultAnalysisStrategy() {
+    const userId = sessionStorage.getItem('userId');
+    if (!userId) return;
+    const select = document.getElementById('filter-strategy');
+    const val = select.value;
+    localStorage.setItem(`default_filter-strategy_${userId}`, val);
+    alert(`Default filter strategy set to ${val === 'all' ? 'All' : val}`);
 }
 
 // ─── Load all analysis data ───────────────────────────────────────────────────
 function loadAnalysisData() {
-    loadStrategies();
+    if (!strategiesLoaded) {
+        loadStrategies();
+        return; // loadStrategies will call loadAnalysisData again once loaded
+    }
     const userId = sessionStorage.getItem('userId');
     if (!userId) { window.location.href = 'login-form.html'; return; }
 

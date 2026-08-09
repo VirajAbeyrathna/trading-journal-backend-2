@@ -102,10 +102,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rrs = Array.isArray(data) ? data.filter(o => o.type === 'rr') : (data.rr || []);
                 
                 const stratSel = document.getElementById('strategy');
-                if(stratSel) stratSel.innerHTML = strategies.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
+                if(stratSel) {
+                    stratSel.innerHTML = strategies.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
+                    const defStrategy = localStorage.getItem(`default_strategy_${userId}`);
+                    if (defStrategy) stratSel.value = defStrategy;
+                }
                 
                 const filterStratSel = document.getElementById('filter-strategy');
-                if(filterStratSel) filterStratSel.innerHTML = '<option value="all">All Strategies</option>' + strategies.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
+                if(filterStratSel) {
+                    filterStratSel.innerHTML = '<option value="all">All Strategies</option>' + strategies.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
+                    const defFilterStrategy = localStorage.getItem(`default_filter-strategy_${userId}`);
+                    if (defFilterStrategy) {
+                        filterStratSel.value = defFilterStrategy;
+                        window.currentStrategyFilter = defFilterStrategy;
+                    }
+                }
                 
                 const rrSel = document.getElementById('rr');
                 if(rrSel) rrSel.innerHTML = rrs.map(o => `<option value="${o.value}" data-id="${o.id}">${o.value}</option>`).join('');
@@ -115,7 +126,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(data => {
                 const instSel = document.getElementById('instrument');
-                if(instSel) instSel.innerHTML = data.map(o => `<option value="${o.symbol || o.name}" data-id="${o.id}">${o.symbol || o.name}</option>`).join('');
+                if(instSel) {
+                    instSel.innerHTML = data.map(o => `<option value="${o.symbol || o.name}" data-id="${o.id}">${o.symbol || o.name}</option>`).join('');
+                    const defInst = localStorage.getItem(`default_instrument_${userId}`);
+                    if (defInst) instSel.value = defInst;
+                }
             }).catch(console.error);
     }
     loadOptions();
@@ -191,6 +206,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     }).catch(() => showNotification(`Error deleting ${type}`, 'error'));
             }
         });
+
+        const starBtn = document.getElementById(`star-${idSuffix}`);
+        if (starBtn) {
+            starBtn.addEventListener('click', () => {
+                const select = document.getElementById(selectId);
+                if (select.selectedIndex === -1) return showNotification(`Select ${type} to set as default`, 'error');
+                const opt = select.options[select.selectedIndex];
+                localStorage.setItem(`default_${idSuffix}_${userId}`, opt.value);
+                showNotification(`${type} default set to ${opt.value}`, 'success');
+            });
+        }
     }
 
     setupDropdownHandlers('Instrument', 'instrument', 'instrument', '/api/instruments', (val) => ({ symbol: val, name: val, type: 'Unknown' }));
@@ -411,6 +437,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filter-strategy')?.addEventListener('change', (e) => {
         window.currentStrategyFilter = e.target.value;
         renderTrades();
+    });
+
+    document.getElementById('star-filter-strategy')?.addEventListener('click', () => {
+        const select = document.getElementById('filter-strategy');
+        const val = select.value;
+        localStorage.setItem(`default_filter-strategy_${userId}`, val);
+        showNotification(`Default filter strategy set to ${val === 'all' ? 'All' : val}`, 'success');
     });
 
     window.editingTradeId = null;

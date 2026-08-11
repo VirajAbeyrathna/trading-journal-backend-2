@@ -1041,10 +1041,19 @@ function processData(trades) {
 
     // Detailed Table Data Preparation
     const monthMap = {};
+    let currentWeekKey = null;
+    let weekCumSum = 0;
+    
     dLabels.forEach((day, index) => {
         const d = new Date(day);
         const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
         const weekKey = isoWeekKey(d);
+        
+        if (weekKey !== currentWeekKey) {
+            currentWeekKey = weekKey;
+            weekCumSum = 0;
+        }
+        weekCumSum += dPeriod[index];
         
         if (!monthMap[monthKey]) monthMap[monthKey] = {};
         if (!monthMap[monthKey][weekKey]) monthMap[monthKey][weekKey] = [];
@@ -1053,7 +1062,7 @@ function processData(trades) {
             day: day,
             dayLabel: d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }),
             dailySum: dPeriod[index],
-            cumSum: dData[index]
+            cumSum: parseFloat(weekCumSum.toFixed(4))
         });
     });
     window.detailedMonthMap = monthMap;

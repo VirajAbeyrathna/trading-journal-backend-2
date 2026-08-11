@@ -404,6 +404,36 @@
             </div>
         </div>
 
+        <!-- ── Detailed Table Row ────────────────────────── -->
+        <div class="card" style="margin-bottom:24px;">
+            <div class="card-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <svg style="width:16px;height:16px;color:#10b981;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18M4 6h16a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"/>
+                    </svg>
+                    Detailed Cumulative RR <span class="badge" style="background:linear-gradient(90deg,#d1fae5,#a7f3d0);color:#065f46;">DAILY & WEEKLY</span>
+                </div>
+                <div>
+                    <select id="detailedMonthSelect" onchange="renderDetailedTable()" style="padding:6px 12px; border-radius:8px; border:1px solid #e2e8f0; font-size:13px; outline:none; background:#f8fafc; color:#334155; cursor:pointer;">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-scroll" style="max-height: 400px;">
+                <table class="rr-table" id="detailedRRTable">
+                    <thead style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>Daily RR</th>
+                            <th>Σ Cumul.</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="4" style="text-align:center;padding:20px;color:#94a3b8;">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ── Target Achievement Feature ────────── -->
         <div class="target-card" id="targetCard">
             <div style="position:relative;z-index:1;">
@@ -810,10 +840,225 @@ function processData(trades) {
     document.getElementById('maxLossStreak').textContent   = maxLoss;
     document.getElementById('totalTrades').textContent     = trades.length;
     // Total RR = last value of the daily cumulative array (or 0)
+    fetch(`${API_BASE}/api/trades?userId=${userId}&ts=${Date.now()}`)
+        .then(r => r.json())
+        .then(trades => {
+            if (!Array.isArray(trades)) return;
+            
+            const strategyFilter = document.getElementById('filter-strategy').value;
+            const startDate = document.getElementById('filter-start-date').value;
+            const endDate = document.getElementById('filter-end-date').value;
+            
+            let filteredTrades = trades;
+            if (strategyFilter && strategyFilter !== 'all') {
+                filteredTrades = filteredTrades.filter(t => t.strategy === strategyFilter);
+            }
+            if (startDate) {
+                filteredTrades = filteredTrades.filter(t => t.date >= startDate);
+            }
+            if (endDate) {
+                filteredTrades = filteredTrades.filter(t => t.date <= endDate);
+            }
+            
+            processData(filteredTrades);
+        })
+        .catch(err => console.warn('Failed to load trades:', err));
+}
+
+function processData(trades) {
+    const dailyRR   = {};  // day  -> [rrVal]
+    const weeklyRR  = {};  // week -> [rrVal]
+    const monthlyRR = {};  // mon  -> [rrVal]
+    const weekDayRR = {};  // week -> { day -> [rrVal] }
+
+    let maxProfit = 0, maxLoss = 0, curProfit = 0, curLoss = 0;
+
+    trades.forEach(trade => {
+        const d = new Date(trade.date);
+        if (isNaN(d)) return;
+
+        const day   = d.toISOString().slice(0, 10);
+        const week  = isoWeekKey(d);
+        const month = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const rrVal = parseRR(trade);
+
+        // Accumulate
+        dailyRR[day]   = (dailyRR[day]   || []).concat(rrVal);
+        weeklyRR[week] = (weeklyRR[week]  || []).concat(rrVal);
+        monthlyRR[month] = (monthlyRR[month] || []).concat(rrVal);
+
+        // Per-week, per-day map (for target feature)
+        if (!weekDayRR[week]) weekDayRR[week] = {};
+        weekDayRR[week][day] = (weekDayRR[week][day] || []).concat(rrVal);
+
+        // Streaks
+        if ((trade.result || '').toLowerCase() === 'profit') {
+            curProfit++; maxProfit = Math.max(maxProfit, curProfit); curLoss = 0;
+        } else if ((trade.result || '').toLowerCase() === 'loss') {
+            curLoss++; maxLoss = Math.max(maxLoss, curLoss); curProfit = 0;
+        }
+    });
+
+    // Store for target feature
+    _weeklyDayMap = weekDayRR;
+
+    const sum = arr => arr.reduce((a, b) => a + b, 0);
+
+    // Helper: convert array of period sums into cumulative running totals
+    function cumSum(arr) {
+        let running = 0;
+        return arr.map(v => { running += v; return parseFloat(running.toFixed(4)); });
+    }
+
+    // ── Daily Chart ────────────────────────────────
+    const dLabels    = Object.keys(dailyRR).sort();
+    const dPeriod    = dLabels.map(k => sum(dailyRR[k]));   // each day's own sum
+    const dData      = cumSum(dPeriod);                      // running total
+    if (dailyChart) {
+        dailyChart.data.labels = dLabels;
+        dailyChart.data.datasets[0].data = dData;
+        dailyChart.data.datasets[0].periodData = dPeriod;
+        dailyChart.update('none');
+    } else {
+        const dc = makeChart(
+            document.getElementById('dailyRRChart').getContext('2d'),
+            'Cumulative RR', '#0ea5e9', dLabels, dData
+        );
+        dc.data.datasets[0].periodData = dPeriod;
+        dc.update('none');
+        dailyChart = dc;
+    }
+
+    // ── Monday Chart ────────────────────────────────
+    const mondayLabels = dLabels.filter(d => new Date(d).getUTCDay() === 1);
+    const mondayPeriod = mondayLabels.map(k => sum(dailyRR[k]));
+    const mondayData   = cumSum(mondayPeriod);
+    if (mondayChart) {
+        mondayChart.data.labels = mondayLabels;
+        mondayChart.data.datasets[0].data = mondayData;
+        mondayChart.data.datasets[0].periodData = mondayPeriod;
+        mondayChart.update('none');
+    } else {
+        const mc = makeChart(
+            document.getElementById('mondayRRChart').getContext('2d'),
+            'Cumulative RR', '#f59e0b', mondayLabels, mondayData
+        );
+        mc.data.datasets[0].periodData = mondayPeriod;
+        mc.update('none');
+        mondayChart = mc;
+    }
+
+    // ── Weekly Chart & Table ───────────────────────
+    const wLabels  = Object.keys(weeklyRR).sort();
+    const wPeriod  = wLabels.map(k => sum(weeklyRR[k]));   // each week's own sum
+    const wData    = cumSum(wPeriod);                       // running total
+    if (weeklyChart) {
+        weeklyChart.data.labels = wLabels;
+        weeklyChart.data.datasets[0].data = wData;
+        weeklyChart.data.datasets[0].periodData = wPeriod;
+        weeklyChart.update('none');
+    } else {
+        const wc = makeChart(
+            document.getElementById('weeklyRRChart').getContext('2d'),
+            'Cumulative RR', '#7c3aed', wLabels, wData
+        );
+        wc.data.datasets[0].periodData = wPeriod;
+        wc.update('none');
+        weeklyChart = wc;
+    }
+    // Weekly table — show period sum + running cumulative
+    const wTbody = document.getElementById('weeklyRRTable').querySelector('tbody');
+    wTbody.innerHTML = wLabels.map((wk, i) => {
+        const periodSum = wPeriod[i];
+        const cumTotal  = wData[i];
+        
+        let mondaySum = 0;
+        const daysInWeek = weekDayRR[wk] || {};
+        for (const day in daysInWeek) {
+            const d = new Date(day);
+            if (d.getUTCDay() === 1) { // 1 is Monday
+                mondaySum += sum(daysInWeek[day]);
+            }
+        }
+        
+        const mCls = mondaySum >= 0 ? 'rr-positive' : 'rr-negative';
+        const pCls = periodSum >= 0 ? 'rr-positive' : 'rr-negative';
+        const cCls = cumTotal  >= 0 ? 'rr-positive' : 'rr-negative';
+        
+        return `<tr>
+            <td style="font-weight:600;">${wk}</td>
+            <td style="color:#94a3b8;font-size:12px;">${weekDateRange(wk)}</td>
+            <td class="${mCls}">${mondaySum >= 0 ? '+' : ''}${mondaySum.toFixed(2)} R</td>
+            <td class="${pCls}">${periodSum >= 0 ? '+' : ''}${periodSum.toFixed(2)} R</td>
+            <td class="${cCls}" style="font-size:11px;opacity:.75;">Σ ${cumTotal >= 0 ? '+' : ''}${cumTotal.toFixed(2)} R</td>
+        </tr>`;
+    }).join('') || `<tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8;">No data yet.</td></tr>`;
+
+    // ── Monthly Chart & Table ──────────────────────
+    const mLabels  = Object.keys(monthlyRR).sort();
+    const mPeriod  = mLabels.map(k => sum(monthlyRR[k]));  // each month's own sum
+    const mData    = cumSum(mPeriod);                       // running total
+    if (monthlyChart) {
+        monthlyChart.data.labels = mLabels;
+        monthlyChart.data.datasets[0].data = mData;
+        monthlyChart.data.datasets[0].periodData = mPeriod;
+        monthlyChart.update('none');
+    } else {
+        const mc = makeChart(
+            document.getElementById('monthlyRRChart').getContext('2d'),
+            'Cumulative RR', '#f43f5e', mLabels, mData
+        );
+        mc.data.datasets[0].periodData = mPeriod;
+        mc.update('none');
+        monthlyChart = mc;
+    }
+    // Monthly table (nicer labels) — show period sum + cumulative
+    const mTbody = document.getElementById('monthlyRRTable').querySelector('tbody');
+    mTbody.innerHTML = mLabels.map((mon, i) => {
+        const periodSum = mPeriod[i];
+        const cumTotal  = mData[i];
+        const pCls = periodSum >= 0 ? 'rr-positive' : 'rr-negative';
+        const cCls = cumTotal  >= 0 ? 'rr-positive' : 'rr-negative';
+        const [y, m] = mon.split('-');
+        const label = new Date(parseInt(y), parseInt(m)-1, 1)
+            .toLocaleDateString('en-US', { month:'long', year:'numeric' });
+        return `<tr>
+            <td style="font-weight:600;">${label}</td>
+            <td class="${pCls}">${periodSum >= 0 ? '+' : ''}${periodSum.toFixed(2)} R</td>
+            <td class="${cCls}" style="font-size:11px;opacity:.75;">Σ ${cumTotal >= 0 ? '+' : ''}${cumTotal.toFixed(2)} R</td>
+        </tr>`;
+    }).join('') || `<tr><td colspan="3" style="text-align:center;padding:20px;color:#94a3b8;">No data yet.</td></tr>`;
+
+    // ── Stats ──────────────────────────────────────
+    document.getElementById('maxProfitStreak').textContent = maxProfit;
+    document.getElementById('maxLossStreak').textContent   = maxLoss;
+    document.getElementById('totalTrades').textContent     = trades.length;
+    // Total RR = last value of the daily cumulative array (or 0)
     const totalRR = dData.length ? dData[dData.length - 1] : 0;
     const totalEl = document.getElementById('totalRR');
     totalEl.textContent = (totalRR >= 0 ? '+' : '') + totalRR.toFixed(2) + ' R';
     totalEl.style.color = totalRR >= 0 ? '#10b981' : '#f43f5e';
+
+    // Detailed Table Data Preparation
+    const monthMap = {};
+    dLabels.forEach((day, index) => {
+        const d = new Date(day);
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const weekKey = isoWeekKey(d);
+        
+        if (!monthMap[monthKey]) monthMap[monthKey] = {};
+        if (!monthMap[monthKey][weekKey]) monthMap[monthKey][weekKey] = [];
+        
+        monthMap[monthKey][weekKey].push({
+            day: day,
+            dayLabel: d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }),
+            dailySum: dPeriod[index],
+            cumSum: dData[index]
+        });
+    });
+    window.detailedMonthMap = monthMap;
+    populateDetailedMonthSelect();
+    renderDetailedTable();
 
     computeTargetAchievement();
 }
@@ -1055,6 +1300,59 @@ function expandDailyChart() {
 
 function closeDailyChartModal() {
     document.getElementById('dailyChartModal').style.display = 'none';
+}
+
+// ─── Detailed Table Logic ──────────────────────────────────────────────────────
+function populateDetailedMonthSelect() {
+    const select = document.getElementById('detailedMonthSelect');
+    if (!select) return;
+    const months = Object.keys(window.detailedMonthMap || {}).sort().reverse();
+    select.innerHTML = months.map(m => {
+        const [y, mo] = m.split('-');
+        const label = new Date(parseInt(y), parseInt(mo)-1, 1).toLocaleDateString('en-US', { month:'long', year:'numeric' });
+        return `<option value="${m}">${label}</option>`;
+    }).join('') || '<option value="">No Data</option>';
+}
+
+function renderDetailedTable() {
+    const select = document.getElementById('detailedMonthSelect');
+    const tbody = document.querySelector('#detailedRRTable tbody');
+    if (!select || !tbody) return;
+    
+    const selectedMonth = select.value;
+    const monthData = (window.detailedMonthMap || {})[selectedMonth];
+    
+    if (!monthData) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#94a3b8;">No data available.</td></tr>';
+        return;
+    }
+    
+    const weeks = Object.keys(monthData).sort();
+    let html = '';
+    
+    weeks.forEach(wk => {
+        const wRange = weekDateRange(wk);
+        html += `<tr style="background:#f8fafc; border-bottom: 2px solid #e2e8f0;">
+            <td colspan="4" style="font-weight:700; color:#475569; padding: 12px 14px; font-size: 12px;">
+                <span style="display:inline-block; background:rgba(99,102,241,0.1); color:#4f46e5; padding:2px 8px; border-radius:12px; margin-right:8px;">${wk}</span>
+                ${wRange}
+            </td>
+        </tr>`;
+        
+        const days = monthData[wk];
+        days.forEach(d => {
+            const pCls = d.dailySum >= 0 ? 'rr-positive' : 'rr-negative';
+            const cCls = d.cumSum >= 0 ? 'rr-positive' : 'rr-negative';
+            html += `<tr>
+                <td style="color:#64748b;font-family:monospace;">${d.day}</td>
+                <td style="font-weight:500;">${d.dayLabel}</td>
+                <td class="${pCls}">${d.dailySum >= 0 ? '+' : ''}${d.dailySum.toFixed(2)} R</td>
+                <td class="${cCls}" style="font-weight:700;">Σ ${d.cumSum >= 0 ? '+' : ''}${d.cumSum.toFixed(2)} R</td>
+            </tr>`;
+        });
+    });
+    
+    tbody.innerHTML = html;
 }
 </script>
 </body>

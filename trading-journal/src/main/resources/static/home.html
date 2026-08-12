@@ -213,6 +213,13 @@
                             <option value="all">All</option>
                         </select>
                         <div class="flex gap-2">
+                            <select id="page-size-select" class="h-10 px-3 border border-gray-300 rounded text-slate-800 bg-white shadow-sm hover:border-blue-400 focus:outline-none transition-colors">
+                                <option value="10" selected>10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                                <option value="999999">All trades</option>
+                            </select>
                             <button id="sort-newest" class="h-10 px-4 rounded bg-blue-100 text-blue-700 font-semibold flex items-center gap-2 hover:bg-blue-200 transition-colors" title="Sort Newest"><i class="lucide lucide-sort-desc"></i>Newest</button>
                             <button id="sort-oldest" class="h-10 px-4 rounded bg-blue-100 text-blue-700 font-semibold flex items-center gap-2 hover:bg-blue-200 transition-colors" title="Sort Oldest"><i class="lucide lucide-sort-asc"></i>Oldest</button>
                             <button id="sort-rr" class="h-10 px-4 rounded bg-blue-100 text-blue-700 font-semibold flex items-center gap-2 hover:bg-blue-200 transition-colors" title="Sort RR"><i class="lucide lucide-filter"></i>RR</button>
@@ -237,6 +244,8 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- Pagination Controls -->
+                <div id="pagination-controls" class="flex justify-between items-center mt-4 px-2"></div>
             </div>
         </div>
         

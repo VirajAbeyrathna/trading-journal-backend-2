@@ -1093,9 +1093,12 @@ function computeTargetAchievement() {
     let achievedCount = 0;
     let daysArr = [];
 
-    const pills = weeks.map(wk => {
+    const pillsByMonth = {};
+
+    weeks.forEach(wk => {
         const dayMap = _weeklyDayMap[wk];
         const sortedDays = Object.keys(dayMap).sort(); // chronological
+        if (sortedDays.length === 0) return;
 
         let cumulative = 0;
         let daysToHit  = null;
@@ -1113,25 +1116,51 @@ function computeTargetAchievement() {
         });
 
         const dateRange = weekDateRange(wk);
+        let pillHtml = '';
 
         if (daysToHit !== null) {
             achievedCount++;
             daysArr.push(daysToHit);
-            return `<div class="week-pill achieved">
+            pillHtml = `<div class="week-pill achieved">
                 <span class="wk-label">${wk} · ${dateRange}</span>
                 <span class="wk-days">✅ ${daysToHit} day${daysToHit > 1 ? 's' : ''}</span>
                 <span class="wk-sum">Week total: ${finalSum >= 0 ? '+':''}${finalSum.toFixed(2)} R</span>
             </div>`;
         } else {
-            return `<div class="week-pill not-achieved">
+            pillHtml = `<div class="week-pill not-achieved">
                 <span class="wk-label">${wk} · ${dateRange}</span>
                 <span class="wk-days">❌ Not reached</span>
                 <span class="wk-sum">Week total: ${finalSum >= 0 ? '+':''}${finalSum.toFixed(2)} R · Target: ${target} R</span>
             </div>`;
         }
+        
+        const firstDay = sortedDays[0];
+        const d = new Date(firstDay);
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        
+        if (!pillsByMonth[monthKey]) pillsByMonth[monthKey] = [];
+        pillsByMonth[monthKey].push(pillHtml);
     });
 
-    resultsEl.innerHTML = pills.join('');
+    let finalHtml = '';
+    const months = Object.keys(pillsByMonth).sort().reverse();
+    months.forEach(m => {
+        const [y, mo] = m.split('-');
+        const monthName = new Date(parseInt(y), parseInt(mo)-1, 1).toLocaleDateString('en-US', { month:'long', year:'numeric' });
+        
+        finalHtml += `
+            <div style="width: 100%; margin-bottom: 16px;">
+                <div style="font-size: 14px; font-weight: 700; color: rgba(255,255,255,.7); margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.1); padding-bottom: 4px;">
+                    ${monthName}
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                    ${pillsByMonth[m].join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    resultsEl.innerHTML = finalHtml;
 
     // Summary stats
     const avgDays = daysArr.length

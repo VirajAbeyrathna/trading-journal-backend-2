@@ -265,6 +265,10 @@ document.addEventListener('DOMContentLoaded', function() {
     window.currentSort = 'newest';
     window.currentStrategyFilter = 'all';
     window.currentTrades = [];
+    window.currentPage = 1;
+    
+    const pageSizeSelect = document.getElementById('page-size-select');
+    window.pageSize = pageSizeSelect ? parseInt(pageSizeSelect.value, 10) : 10;
 
     function renderTrades() {
         const tradeList = document.getElementById('trade-list');
@@ -277,48 +281,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (processedTrades.length > 0) {
-            let tempTrades = [...processedTrades].filter(t => t && t.date).sort((a, b) => {
+            processedTrades = [...processedTrades].filter(t => t && t.date).sort((a, b) => {
                 let pa = a.date.split('-');
                 let pb = b.date.split('-');
                 if(pa.length < 3 || pb.length < 3) return 0;
                 return new Date(pa[0], pa[1]-1, pa[2]) - new Date(pb[0], pb[1]-1, pb[2]);
             });
-            let filledTrades = [];
-            
-            for (let i = 0; i < tempTrades.length; i++) {
-                if (i > 0) {
-                    let prevParts = tempTrades[i-1].date.split('-');
-                    let currParts = tempTrades[i].date.split('-');
-                    
-                    if (prevParts.length >= 3 && currParts.length >= 3) {
-                        let prevDate = new Date(prevParts[0], prevParts[1] - 1, prevParts[2]);
-                        let currDate = new Date(currParts[0], currParts[1] - 1, currParts[2]);
-                        
-                        let nextDate = new Date(prevDate);
-                        nextDate.setDate(nextDate.getDate() + 1);
-                        
-                        while (nextDate < currDate) {
-                            let dayOfWeek = nextDate.getDay();
-                            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                                filledTrades.push({
-                                    isDummy: true,
-                                    instrument: '-',
-                                    strategy: '-',
-                                    rr: '0',
-                                    result: '-',
-                                    date: formatDate(nextDate)
-                                });
-                            }
-                            nextDate.setDate(nextDate.getDate() + 1);
-                        }
-                    }
-                }
-                filledTrades.push(tempTrades[i]);
-            }
-            
-            // Re-append any trades that had no valid date
-            let invalidTrades = processedTrades.filter(t => !t || !t.date);
-            processedTrades = filledTrades.concat(invalidTrades);
+            // Removed dummy trades insertion to fix pagination
         }
 
         let sortedTrades = processedTrades;
@@ -353,7 +322,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        tradeList.innerHTML = sortedTrades.length ? sortedTrades.map(t => {
+        const totalItems = sortedTrades.length;
+        const totalPages = Math.ceil(totalItems / window.pageSize) || 1;
+        if (window.currentPage > totalPages) window.currentPage = totalPages;
+        if (window.currentPage < 1) window.currentPage = 1;
+
+        const startIndex = (window.currentPage - 1) * window.pageSize;
+        const endIndex = startIndex + window.pageSize;
+        const pagedTrades = sortedTrades.slice(startIndex, endIndex);
+
+        tradeList.innerHTML = pagedTrades.length ? pagedTrades.map(t => {
             const isProfit = t.result === 'Profit';
             const isLoss = t.result === 'Loss';
             const isDummy = t.isDummy;
@@ -409,6 +387,65 @@ document.addEventListener('DOMContentLoaded', function() {
             </tr>
             `;
         }).join('') : '<tr><td colspan="6" class="text-gray-500 text-center p-8">No trades yet.</td></tr>';
+
+        renderPaginationControls(totalItems, totalPages);
+    }
+
+    window.changePage = function(delta) {
+        window.currentPage += delta;
+        renderTrades();
+    };
+
+    function renderPaginationControls(totalItems, totalPages) {
+        const controls = document.getElementById('pagination-controls');
+        if (!controls) return;
+        
+        if (totalItems === 0) {
+            controls.innerHTML = '';
+            return;
+        }
+
+        const start = (window.currentPage - 1) * window.pageSize + 1;
+        const end = Math.min(window.currentPage * window.pageSize, totalItems);
+
+        let pageButtonsHTML = '';
+        let startPage = Math.max(1, window.currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === window.currentPage;
+            const activeClass = isActive 
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                : 'bg-white text-slate-700 border-gray-300 hover:bg-gray-50';
+            pageButtonsHTML += `<button data-page="${i}" class="page-num-btn px-4 py-2 border rounded font-medium shadow-sm transition-colors ${activeClass}">${i}</button>`;
+        }
+
+        controls.innerHTML = `
+            <div class="text-sm text-slate-600 font-medium">
+                Showing ${start} to ${end} of ${totalItems} trades
+            </div>
+            <div class="flex gap-2">
+                <button id="prev-page-btn" ${window.currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 bg-white border border-gray-300 rounded text-slate-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-colors">Previous</button>
+                ${pageButtonsHTML}
+                <button id="next-page-btn" ${window.currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2 bg-white border border-gray-300 rounded text-slate-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-colors">Next</button>
+            </div>
+        `;
+        
+        const prevBtn = document.getElementById('prev-page-btn');
+        if (prevBtn) prevBtn.addEventListener('click', () => { window.currentPage--; renderTrades(); });
+        
+        const nextBtn = document.getElementById('next-page-btn');
+        if (nextBtn) nextBtn.addEventListener('click', () => { window.currentPage++; renderTrades(); });
+
+        document.querySelectorAll('.page-num-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                window.currentPage = parseInt(e.target.getAttribute('data-page'), 10);
+                renderTrades();
+            });
+        });
     }
 
     function fetchTrades() {
@@ -429,13 +466,20 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchTrades();
 
     // Sort buttons listeners
-    document.getElementById('sort-newest')?.addEventListener('click', () => { window.currentSort = 'newest'; renderTrades(); });
-    document.getElementById('sort-oldest')?.addEventListener('click', () => { window.currentSort = 'oldest'; renderTrades(); });
-    document.getElementById('sort-rr')?.addEventListener('click', () => { window.currentSort = 'rr'; renderTrades(); });
-    document.getElementById('sort-result')?.addEventListener('click', () => { window.currentSort = 'result'; renderTrades(); });
+    document.getElementById('sort-newest')?.addEventListener('click', () => { window.currentSort = 'newest'; window.currentPage = 1; renderTrades(); });
+    document.getElementById('sort-oldest')?.addEventListener('click', () => { window.currentSort = 'oldest'; window.currentPage = 1; renderTrades(); });
+    document.getElementById('sort-rr')?.addEventListener('click', () => { window.currentSort = 'rr'; window.currentPage = 1; renderTrades(); });
+    document.getElementById('sort-result')?.addEventListener('click', () => { window.currentSort = 'result'; window.currentPage = 1; renderTrades(); });
+
+    document.getElementById('page-size-select')?.addEventListener('change', (e) => {
+        window.pageSize = parseInt(e.target.value, 10);
+        window.currentPage = 1;
+        renderTrades();
+    });
 
     document.getElementById('filter-strategy')?.addEventListener('change', (e) => {
         window.currentStrategyFilter = e.target.value;
+        window.currentPage = 1;
         renderTrades();
     });
 

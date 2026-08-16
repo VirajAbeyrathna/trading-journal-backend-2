@@ -264,11 +264,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.currentSort = 'newest';
     window.currentStrategyFilter = 'all';
+    window.currentPeriodFilter = 'all';
     window.currentTrades = [];
     window.currentPage = 1;
     
     const pageSizeSelect = document.getElementById('page-size-select');
     window.pageSize = pageSizeSelect ? parseInt(pageSizeSelect.value, 10) : 10;
+
+    function filterTradeByPeriod(tradeDate, period) {
+        if (!tradeDate || !period || period === 'all') return true;
+
+        const dateParts = tradeDate.split('-');
+        if (dateParts.length < 3) return false;
+
+        const trade = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+
+        if (period === 'week') {
+            const day = today.getDay();
+            const diffToMonday = (day + 6) % 7;
+            const weekStart = new Date(year, month, today.getDate() - diffToMonday);
+            const weekEnd = new Date(year, month, weekStart.getDate() + 6);
+            weekEnd.setHours(23, 59, 59, 999);
+            weekStart.setHours(0, 0, 0, 0);
+            return trade >= weekStart && trade <= weekEnd;
+        }
+
+        if (period === 'month') {
+            return trade.getFullYear() === year && trade.getMonth() === month;
+        }
+
+        if (period === 'custom') {
+            const monthInput = document.getElementById('custom-month-picker');
+            const chosen = monthInput && monthInput.value ? monthInput.value : null;
+            if (!chosen) return true;
+            const [targetYear, targetMonth] = chosen.split('-').map(Number);
+            return trade.getFullYear() === targetYear && trade.getMonth() === (targetMonth - 1);
+        }
+
+        return true;
+    }
 
     function renderTrades() {
         const tradeList = document.getElementById('trade-list');
@@ -278,6 +315,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (window.currentStrategyFilter && window.currentStrategyFilter !== 'all') {
             processedTrades = processedTrades.filter(t => t.strategy === window.currentStrategyFilter);
+        }
+
+        if (window.currentPeriodFilter && window.currentPeriodFilter !== 'all') {
+            processedTrades = processedTrades.filter(t => filterTradeByPeriod(t.date, window.currentPeriodFilter));
         }
 
         if (processedTrades.length > 0) {
@@ -483,12 +524,45 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTrades();
     });
 
+    const customMonthPicker = document.getElementById('custom-month-picker');
+    const periodSelect = document.getElementById('filter-period');
+
+    function syncCustomMonthVisibility() {
+        const isCustom = periodSelect && periodSelect.value === 'custom';
+        if (customMonthPicker) {
+            customMonthPicker.classList.toggle('hidden', !isCustom);
+            if (isCustom && !customMonthPicker.value) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                customMonthPicker.value = `${year}-${month}`;
+            }
+        }
+    }
+
+    periodSelect?.addEventListener('change', (e) => {
+        window.currentPeriodFilter = e.target.value;
+        syncCustomMonthVisibility();
+        window.currentPage = 1;
+        renderTrades();
+    });
+
+    customMonthPicker?.addEventListener('change', (e) => {
+        if (periodSelect && periodSelect.value === 'custom') {
+            window.currentPeriodFilter = 'custom';
+            window.currentPage = 1;
+            renderTrades();
+        }
+    });
+
     document.getElementById('star-filter-strategy')?.addEventListener('click', () => {
         const select = document.getElementById('filter-strategy');
         const val = select.value;
         localStorage.setItem(`default_filter-strategy_${userId}`, val);
         showNotification(`Default filter strategy set to ${val === 'all' ? 'All' : val}`, 'success');
     });
+
+    syncCustomMonthVisibility();
 
     window.editingTradeId = null;
 

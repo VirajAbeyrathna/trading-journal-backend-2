@@ -494,6 +494,34 @@
     </div>
 </div>
 
+<!-- Modal for Week Detailed RR -->
+<div id="weekDetailsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(4px);">
+    <div style="background:#fff; border-radius:12px; width:90%; max-width:600px; max-height:90vh; padding:20px; display:flex; flex-direction:column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div>
+                <h2 style="color:#1e293b; margin:0; font-size:20px; font-weight:700;" id="weekDetailsTitle">Detailed Cumulative RR</h2>
+                <div id="weekDetailsSubtitle" style="color:#64748b; font-size:14px; margin-top:4px;"></div>
+                <div id="weekDetailsTargetInfo" style="margin-top:6px; font-size:13px; font-weight:600;"></div>
+            </div>
+            <button onclick="closeWeekDetailsModal()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:24px; line-height:1;">&times;</button>
+        </div>
+        <div style="flex:1; overflow-y:auto;">
+            <table class="rr-table" style="width:100%;">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>Daily RR</th>
+                        <th>Σ Cumul.</th>
+                    </tr>
+                </thead>
+                <tbody id="weekDetailsTbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <!-- ════════════════════ SCRIPT ════════════════════ -->
 <script>
 // ─── Utility: Parse RR value from trade ──────────────────────────────────────
@@ -1041,6 +1069,7 @@ function processData(trades) {
 
     // Detailed Table Data Preparation
     const monthMap = {};
+    const weekMap = {};
     let currentWeekKey = null;
     let weekCumSum = 0;
     
@@ -1057,15 +1086,20 @@ function processData(trades) {
         
         if (!monthMap[monthKey]) monthMap[monthKey] = {};
         if (!monthMap[monthKey][weekKey]) monthMap[monthKey][weekKey] = [];
+        if (!weekMap[weekKey]) weekMap[weekKey] = [];
         
-        monthMap[monthKey][weekKey].push({
+        const entry = {
             day: day,
             dayLabel: d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }),
             dailySum: dPeriod[index],
             cumSum: parseFloat(weekCumSum.toFixed(4))
-        });
+        };
+        
+        monthMap[monthKey][weekKey].push(entry);
+        weekMap[weekKey].push(entry);
     });
     window.detailedMonthMap = monthMap;
+    window.detailedWeekMap = weekMap;
     populateDetailedMonthSelect();
     renderDetailedTable();
 
@@ -1121,13 +1155,13 @@ function computeTargetAchievement() {
         if (daysToHit !== null) {
             achievedCount++;
             daysArr.push(daysToHit);
-            pillHtml = `<div class="week-pill achieved">
+            pillHtml = `<div class="week-pill achieved" onclick="openWeekDetailsModal('${wk}', ${daysToHit}, ${target})" style="cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <span class="wk-label">${wk} · ${dateRange}</span>
                 <span class="wk-days">✅ ${daysToHit} day${daysToHit > 1 ? 's' : ''}</span>
                 <span class="wk-sum">Week total: ${finalSum >= 0 ? '+':''}${finalSum.toFixed(2)} R</span>
             </div>`;
         } else {
-            pillHtml = `<div class="week-pill not-achieved">
+            pillHtml = `<div class="week-pill not-achieved" onclick="openWeekDetailsModal('${wk}', null, ${target})" style="cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <span class="wk-label">${wk} · ${dateRange}</span>
                 <span class="wk-days">❌ Not reached</span>
                 <span class="wk-sum">Week total: ${finalSum >= 0 ? '+':''}${finalSum.toFixed(2)} R · Target: ${target} R</span>
@@ -1339,6 +1373,45 @@ function expandDailyChart() {
 function closeDailyChartModal() {
     document.getElementById('dailyChartModal').style.display = 'none';
 }
+
+function openWeekDetailsModal(wk, daysToHit, target) {
+    document.getElementById('weekDetailsModal').style.display = 'flex';
+    document.getElementById('weekDetailsTitle').textContent = `Detailed RR: ${wk}`;
+    document.getElementById('weekDetailsSubtitle').textContent = weekDateRange(wk);
+    
+    const targetInfoEl = document.getElementById('weekDetailsTargetInfo');
+    if (daysToHit !== null) {
+        targetInfoEl.innerHTML = `<span style="color:#059669;">🎯 Target of ${target} R achieved in ${daysToHit} day${daysToHit > 1 ? 's' : ''}</span>`;
+    } else {
+        targetInfoEl.innerHTML = `<span style="color:#e11d48;">❌ Target of ${target} R was not reached</span>`;
+    }
+    
+    const tbody = document.getElementById('weekDetailsTbody');
+    const days = (window.detailedWeekMap || {})[wk];
+    
+    if (!days || days.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#94a3b8;">No data available.</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    days.forEach(d => {
+        const pCls = d.dailySum >= 0 ? 'rr-positive' : 'rr-negative';
+        const cCls = d.cumSum >= 0 ? 'rr-positive' : 'rr-negative';
+        html += `<tr>
+            <td style="color:#64748b;font-family:monospace;padding:12px 14px;border-bottom:1px solid #f1f5f9;">${d.day}</td>
+            <td style="font-weight:500;padding:12px 14px;border-bottom:1px solid #f1f5f9;">${d.dayLabel}</td>
+            <td class="${pCls}" style="padding:12px 14px;border-bottom:1px solid #f1f5f9;">${d.dailySum >= 0 ? '+' : ''}${d.dailySum.toFixed(2)} R</td>
+            <td class="${cCls}" style="font-weight:700;padding:12px 14px;border-bottom:1px solid #f1f5f9;">Σ ${d.cumSum >= 0 ? '+' : ''}${d.cumSum.toFixed(2)} R</td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+function closeWeekDetailsModal() {
+    document.getElementById('weekDetailsModal').style.display = 'none';
+}
+
 
 // ─── Detailed Table Logic ──────────────────────────────────────────────────────
 function populateDetailedMonthSelect() {

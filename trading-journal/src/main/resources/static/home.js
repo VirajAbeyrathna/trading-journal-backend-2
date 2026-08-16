@@ -408,12 +408,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const start = (window.currentPage - 1) * window.pageSize + 1;
         const end = Math.min(window.currentPage * window.pageSize, totalItems);
 
+        let pageButtonsHTML = '';
+        let startPage = Math.max(1, window.currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === window.currentPage;
+            const activeClass = isActive 
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                : 'bg-white text-slate-700 border-gray-300 hover:bg-gray-50';
+            pageButtonsHTML += `<button data-page="${i}" class="page-num-btn px-4 py-2 border rounded font-medium shadow-sm transition-colors ${activeClass}">${i}</button>`;
+        }
+
         controls.innerHTML = `
             <div class="text-sm text-slate-600 font-medium">
                 Showing ${start} to ${end} of ${totalItems} trades
             </div>
             <div class="flex gap-2">
                 <button id="prev-page-btn" ${window.currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 bg-white border border-gray-300 rounded text-slate-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-colors">Previous</button>
+                ${pageButtonsHTML}
                 <button id="next-page-btn" ${window.currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2 bg-white border border-gray-300 rounded text-slate-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-colors">Next</button>
             </div>
         `;
@@ -423,6 +439,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const nextBtn = document.getElementById('next-page-btn');
         if (nextBtn) nextBtn.addEventListener('click', () => { window.currentPage++; renderTrades(); });
+
+        document.querySelectorAll('.page-num-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                window.currentPage = parseInt(e.target.getAttribute('data-page'), 10);
+                renderTrades();
+            });
+        });
     }
 
     function fetchTrades() {
